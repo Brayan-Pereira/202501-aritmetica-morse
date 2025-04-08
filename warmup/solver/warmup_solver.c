@@ -1,87 +1,76 @@
 #include "../include/warmup_solver.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 const char OUTPUT_DIR[] = "output/";
 const char SOLUTION_FILE[] = "solution.txt";
 
-void solve_warmup(FILE* ptr_in_file, char* file_name, const char* warmup_instance) {
-
-    FILE *froutptr, *fwsolptr;
-    char line[100];
-    char out_file[100];
-
-    out_file[0] = '\0';
-    strcat(out_file, warmup_instance);
-    strcat(out_file, OUTPUT_DIR);
-    strcat(out_file, file_name);
-    
-    // Creating solution file
-    fwsolptr = fopen(SOLUTION_FILE, "w");
-    if (fwsolptr == NULL) {
-        printf("File '%s' can't be opened\n", SOLUTION_FILE);
-        exit(1);
+int morse_to_value(char c) {
+    switch (c) {
+        case '.': return 1;
+        case '-': return 5;
+        case ':': return 2;
+        case '=': return 10;
+        default: return 0;
     }
-
-    /* *****************************************
-      Replace this code by your warmup solution
-      ****************************************** */
-
-    // Opening answer file
-    froutptr = fopen(out_file, "r");
-    if (froutptr == NULL) {
-        printf("File '%s' can't be opened\n", out_file);
-        exit(1);
-    }
-
-    // Reading from the answer file and writing to the solution file
-    while (fgets(line, 100, froutptr)) {
-        fputs(line, fwsolptr);
-    }
-
-    fclose(froutptr);
-
-    /* *************************************** */
-
-    fclose(fwsolptr);
 }
 
-int check_warmup_solution(const char* file_name, const char* warmup_instance) {
+int parse_morse_number(const char* morse) {
+    int value = 0;
+    for (int i = 0; morse[i] != '\0'; i++) {
+        value += morse_to_value(morse[i]);
+    }
+    return value;
+}
 
-    FILE *fanswer, *fsolution;
-    char answer_line[100], solution_line[100], answer_file[100];
-    int is_correct = 1;
+int evaluate_expression(int values[], char operators[], int n) {
+    int result = values[0];
+    for (int i = 0; i < n; i++) {
+        if (operators[i] == '+') {
+            result += values[i + 1];
+        } else if (operators[i] == '*') {
+            result *= values[i + 1];
+        }
+    }
+    return result;
+}
 
-    answer_file[0] = '\0';
-    strcat(answer_file, warmup_instance);
-    strcat(answer_file, OUTPUT_DIR);
-    strcat(answer_file, file_name);
+int solve_warmup(FILE* ptr_in_file, char* file_name, const char* warmup_instance) {
+    FILE *fwsolptr;
+    int n;
+    char expression[100][10];
 
-    // Opening answer file
-    fanswer = fopen(answer_file, "r");
-    if (fanswer == NULL) {
-        printf("File '%s' can't be opened\n", answer_file);
-        exit(1);
+    if (fscanf(ptr_in_file, "%d", &n) != 1) {
+        return 0;
     }
 
-    // Opening solution file
-    fsolution = fopen(SOLUTION_FILE, "r");
-    if (fsolution == NULL) {
-        printf("File '%s' can't be opened\n", SOLUTION_FILE);
-        exit(1);
-    }
-
-    // Reading from the answer file and comparing with the solution file
-    while (fgets(answer_line, 100, fanswer)) {
-
-        fgets(solution_line, 100, fsolution);
-
-        if (strcmp(answer_line, solution_line)) {
-            is_correct = 0;
-            break;
+    for (int i = 0; i < 2 * n + 1; i++) {
+        if (fscanf(ptr_in_file, "%s", expression[i]) != 1) {
+            return 0;
         }
     }
 
-    fclose(fanswer);
-    fclose(fsolution);
+    int values[n + 1];
+    char operators[n];
 
-    return is_correct;
+    for (int i = 0; i < 2 * n + 1; i++) {
+        if (i % 2 == 0) {
+            values[i / 2] = parse_morse_number(expression[i]);
+        } else {
+            operators[i / 2] = expression[i][0];
+        }
+    }
+
+    int result = evaluate_expression(values, operators, n);
+
+    fwsolptr = fopen(SOLUTION_FILE, "w");
+    if (fwsolptr == NULL) {
+        return 0;
+    }
+
+    fprintf(fwsolptr, "%d\n", result);
+    fclose(fwsolptr);
+
+    return 1; // sucesso
 }
